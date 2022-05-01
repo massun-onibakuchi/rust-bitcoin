@@ -59,6 +59,7 @@ pub struct OutPoint {
     /// The referenced transaction's txid.
     pub txid: Txid,
     /// The index of the referenced output in its transaction's vout.
+    /// The “v” in vout stands for vector
     pub vout: u32,
 }
 serde_struct_human_string_impl!(OutPoint, "an OutPoint", txid, vout);
@@ -191,9 +192,12 @@ impl ::core::str::FromStr for OutPoint {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TxIn {
     /// The reference to the previous output that is being used an an input.
-    pub previous_output: OutPoint,
+    /// txid, vout @note https://learnmeabitcoin.com/technical/vout
+    /// You can use a txid and a vout to uniquely select an output to use as an input in a new transaction.
+    pub previous_output: OutPoint, 
     /// The script which pushes values on the stack which will cause
     /// the referenced output's script to be accepted.
+    /// A script that unlocks the input.
     pub script_sig: Script,
     /// The sequence number, which suggests to miners which of two
     /// conflicting transactions should be preferred, or 0xFFFFFFFF
@@ -226,6 +230,9 @@ pub struct TxOut {
     /// The value of the output, in satoshis.
     pub value: u64,
     /// The script which must be satisfied for the output to be spent.
+    /// more easily thought of as a “locking script”
+    /// the script that you put on an output to prevent others from spending it.
+    /// @note https://learnmeabitcoin.com/technical/scriptPubKey
     pub script_pubkey: Script
 }
 
@@ -269,8 +276,9 @@ impl Default for TxOut {
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Transaction {
+    /// @note https://learnmeabitcoin.com/technical/transaction-data
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
-    pub version: i32,
+    pub version: i32,   
     /// Block number before which this transaction is valid, or 0 for valid immediately.
     pub lock_time: u32,
     /// List of transaction inputs.
@@ -297,6 +305,8 @@ impl Transaction {
     /// to the output of `wtxid()`, but for segwit transactions,
     /// this will give the correct txid (not including witnesses) while `wtxid`
     /// will also hash witnesses.
+    /// A TXID is always 32 bytes (64 characters) and hexadecimal.
+    /// You get a TXID by hashing transaction data through SHA256 twice.
     pub fn txid(&self) -> Txid {
         let mut enc = Txid::engine();
         self.version.consensus_encode(&mut enc).expect("engines don't error");

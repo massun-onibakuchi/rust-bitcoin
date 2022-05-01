@@ -65,6 +65,7 @@ pub const MAX_SCRIPT_ELEMENT_SIZE: usize = 520;
 pub const SUBSIDY_HALVING_INTERVAL: u32 = 210_000;
 
 /// In Bitcoind this is insanely described as ~((u256)0 >> 32)
+/// @note 00000000ffff0000000000000000000000000000000000000000000000000000
 pub fn max_target(_: Network) -> Uint256 {
     Uint256::from_u64(0xFFFF).unwrap() << 208
 }

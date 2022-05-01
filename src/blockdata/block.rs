@@ -39,6 +39,15 @@ use VarInt;
 
 /// A block header, which contains all the block's information except
 /// the actual transactions
+/// The fields in the block header provide a unique summary of the entire block.
+/// 
+// Field	Size	Data
+// Version	4 bytes	Little-endian
+// Previous Block Hash	32 bytes	Little-endian
+// Merkle Root	32 bytes	Little-endian
+// Time	4 bytes	Little-endian
+// Bits	4 bytes	Little-endian
+// Nonce 4 bytes	Little-endian
 #[derive(Copy, PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BlockHeader {
@@ -47,6 +56,7 @@ pub struct BlockHeader {
     /// Reference to the previous block in the chain.
     pub prev_blockhash: BlockHash,
     /// The root hash of the merkle tree of transactions in the block.
+    /// a short representation of every transaction inside the block.
     pub merkle_root: TxMerkleNode,
     /// The timestamp of the block, as claimed by the miner.
     pub time: u32,
@@ -85,6 +95,12 @@ impl BlockHeader {
     ///     )
     /// );
     /// ```
+    // @note https://learnmeabitcoin.com/technical/bits
+    // Example
+    // Here's what the target was when Block 406,800 was mined:
+    // Target: 0x00000000000000000696f4000000000000000000000000000000000000000000
+    // And this is the Bits field you’ll find in the block header for it:
+    // Bits: 0x180696f4
     pub fn u256_from_compact_target(bits: u32) -> Uint256 {
         // This is a floating-point "compact" encoding originally used by
         // OpenSSL, which satoshi put into consensus code, so we're stuck
@@ -126,6 +142,12 @@ impl BlockHeader {
     }
 
     /// Computes the popular "difficulty" measure for mining.
+    /// target = targetmax / difficulty
+    /// It’s used as an easy way to modify the target because targetmax is constant.
+    /// @note https://learnmeabitcoin.com/beginners/difficulty
+    /// The difficulty adjusts every 2016 blocks (roughly every 2 weeks).
+    /// t this interval, each node takes the expected time for these 2016 blocks to be mined (2016 x 10 minutes),
+    /// and divides it by the actual time it took (however many minutes):
     pub fn difficulty(&self, network: Network) -> u64 {
         (max_target(network) / self.target()).low_u64()
     }
@@ -170,6 +192,7 @@ impl_consensus_encoding!(Block, header, txdata);
 
 impl Block {
     /// Returns the block hash.
+    /// You get a Block Hash by hashing the block header through SHA256 twice.
     pub fn block_hash(&self) -> BlockHash {
         self.header.block_hash()
     }
